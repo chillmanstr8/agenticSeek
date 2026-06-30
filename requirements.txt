@@ -45,6 +45,8 @@ openai
 sniffio
 ordered_set
 pypinyin
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
 
 # Optional: TTS support (requires Python <3.12)
 # pip install kokoro==0.9.4 soundfile ipython

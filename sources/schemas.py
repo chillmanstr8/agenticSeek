@@ -1,5 +1,5 @@
 
-from typing import Tuple, Callable
+from typing import Tuple, Callable, List, Optional
 from pydantic import BaseModel
 from sources.utility import pretty_print
 
@@ -75,3 +75,66 @@ class executorResult:
         pretty_print('▂'*64, color="status")
         pretty_print(self.feedback, color="success" if self.success else "failure")
         pretty_print('▂'*64, color="status")
+
+
+# ---------------------------------------------------------------------------
+# Resume Optimizer schemas
+# ---------------------------------------------------------------------------
+
+class ResumeAnalyzeRequest(BaseModel):
+    job_url: Optional[str] = None
+    job_text: Optional[str] = None
+
+    def jsonify(self):
+        return {"job_url": self.job_url, "job_text": self.job_text}
+
+
+class ResumeAnalyzeResponse(BaseModel):
+    keywords: List[str] = []
+    required_skills: List[str] = []
+    implied_skills: List[str] = []
+    culture_signals: List[str] = []
+    seniority_level: str = "unknown"
+    top_priorities: List[str] = []
+    analysis_summary: str = ""
+    error: Optional[str] = None
+
+    def jsonify(self):
+        return {
+            "keywords": self.keywords,
+            "required_skills": self.required_skills,
+            "implied_skills": self.implied_skills,
+            "culture_signals": self.culture_signals,
+            "seniority_level": self.seniority_level,
+            "top_priorities": self.top_priorities,
+            "analysis_summary": self.analysis_summary,
+            "error": self.error,
+        }
+
+
+class ResumeGenerateRequest(BaseModel):
+    job_url: Optional[str] = None
+    job_text: Optional[str] = None
+    master_resume: str
+
+    def jsonify(self):
+        return {
+            "job_url": self.job_url,
+            "job_text": self.job_text,
+            "master_resume": self.master_resume,
+        }
+
+
+class ResumeGenerateResponse(BaseModel):
+    tailored_resume: str = ""
+    ats_score_estimate: str = "unknown"
+    missing_from_master: List[str] = []
+    error: Optional[str] = None
+
+    def jsonify(self):
+        return {
+            "tailored_resume": self.tailored_resume,
+            "ats_score_estimate": self.ats_score_estimate,
+            "missing_from_master": self.missing_from_master,
+            "error": self.error,
+        }

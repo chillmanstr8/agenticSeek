@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi import UploadFile, File
 import uuid
 
 from sources.llm_provider import Provider
@@ -20,7 +21,8 @@ from sources.agents import CasualAgent, CoderAgent, FileAgent, PlannerAgent, Bro
 from sources.browser import Browser, create_driver
 from sources.utility import pretty_print
 from sources.logger import Logger
-from sources.schemas import QueryRequest, QueryResponse
+from sources.schemas import QueryRequest, QueryResponse, ResumeAnalyzeRequest, ResumeAnalyzeResponse, ResumeGenerateRequest, ResumeGenerateResponse
+from sources.resume_optimizer import fetch_job_description, analyze_job_description, build_tailored_resume, extract_text_from_pdf
 
 from dotenv import load_dotenv
 
@@ -288,6 +290,118 @@ async def process_query(request: QueryRequest):
         logger.info("Processing finished")
         if config.getboolean('MAIN', 'save_session'):
             interaction.save_session()
+
+
+# ---------------------------------------------------------------------------
+# Resume Optimizer endpoints
+# ---------------------------------------------------------------------------
+
+def _resolve_job_text(job_url, job_text):
+    """
+    Return (jd_text, error_message).
+    Prefers job_text if provided; otherwise fetches from job_url.
+    """
+    if job_text and job_text.strip():
+        return job_text.strip(), None
+    if job_url and job_url.strip():
+        fetched = fetch_job_description(job_url.strip())
+        if fetched.startswith("ERROR:"):
+            return None, fetched[7:].strip()
+        return fetched, None
+    return None, "Either job_url or job_text must be provided."
+
+
+def _get_provider():
+    """Return the LLM provider from the first available agent."""
+    return interaction.agents[0].llm
+
+
+@api.post("/resume/analyze", response_model=ResumeAnalyzeResponse)
+async def resume_analyze(request: ResumeAnalyzeRequest):
+    """
+    Analyze a job description and return ATS keywords, skills, and culture signals.
+    Accepts either a URL to scrape or raw job description text.
+    """
+    logger.info("Resume analyze endpoint called")
+    jd_text, err = _resolve_job_text(request.job_url, request.job_text)
+    if err:
+        return JSONResponse(status_code=400, content=ResumeAnalyzeResponse(error=err).jsonify())
+
+    analysis = analyze_job_description(jd_text, _get_provider())
+
+    if "error" in analysis and len(analysis) <= 2:
+        return JSONResponse(status_code=500, content=ResumeAnalyzeResponse(error=analysis["error"]).jsonify())
+
+    resp = ResumeAnalyzeResponse(
+        keywords=analysis.get("ats_keywords", []),
+        required_skills=analysis.get("required_skills", []),
+        implied_skills=analysis.get("implied_skills", []),
+        culture_signals=analysis.get("culture_signals", []),
+        seniority_level=analysis.get("seniority_level", "unknown"),
+        top_priorities=analysis.get("top_priorities", []),
+        analysis_summary=analysis.get("analysis_summary", ""),
+    )
+    logger.info("Resume analyze completed successfully")
+    return JSONResponse(status_code=200, content=resp.jsonify())
+
+
+@api.post("/resume/generate", response_model=ResumeGenerateResponse)
+async def resume_generate(request: ResumeGenerateRequest):
+    """
+    Generate a tailored resume from a master resume optimised for the given job description.
+    Accepts either a URL or raw job description text, plus the master resume text.
+    """
+    logger.info("Resume generate endpoint called")
+    if not request.master_resume or not request.master_resume.strip():
+        return JSONResponse(
+            status_code=400,
+            content=ResumeGenerateResponse(error="master_resume must not be empty.").jsonify()
+        )
+
+    jd_text, err = _resolve_job_text(request.job_url, request.job_text)
+    if err:
+        return JSONResponse(status_code=400, content=ResumeGenerateResponse(error=err).jsonify())
+
+    provider = _get_provider()
+
+    analysis = analyze_job_description(jd_text, provider)
+    if "error" in analysis and len(analysis) <= 2:
+        return JSONResponse(
+            status_code=500,
+            content=ResumeGenerateResponse(error=f"JD analysis failed: {analysis['error']}").jsonify()
+        )
+
+    result = build_tailored_resume(request.master_resume.strip(), analysis, provider)
+    if result.get("error"):
+        return JSONResponse(
+            status_code=500,
+            content=ResumeGenerateResponse(error=result["error"]).jsonify()
+        )
+
+    resp = ResumeGenerateResponse(
+        tailored_resume=result["tailored_resume"],
+        ats_score_estimate=result["ats_score_estimate"],
+        missing_from_master=result["missing_from_master"],
+    )
+    logger.info("Resume generate completed successfully")
+    return JSONResponse(status_code=200, content=resp.jsonify())
+
+
+@api.post("/resume/upload_pdf")
+async def resume_upload_pdf(file: UploadFile = File(...)):
+    """
+    Accept a multipart PDF upload and return extracted plain text.
+    The frontend uses this to convert a PDF master resume to text before calling /resume/generate.
+    """
+    logger.info(f"PDF upload received: {file.filename}")
+    if not file.filename.lower().endswith(".pdf"):
+        return JSONResponse(status_code=400, content={"error": "Only PDF files are accepted."})
+    pdf_bytes = await file.read()
+    text = extract_text_from_pdf(pdf_bytes)
+    if text.startswith("ERROR:"):
+        return JSONResponse(status_code=500, content={"error": text[7:].strip()})
+    return JSONResponse(status_code=200, content={"text": text})
+
 
 if __name__ == "__main__":
     # Print startup info

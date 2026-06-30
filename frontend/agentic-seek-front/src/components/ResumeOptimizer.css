@@ -1,0 +1,475 @@
+/* ============================================================
+   Resume Optimizer – component styles
+   Follows the existing AgenticSeek dark-theme design language
+   ============================================================ */
+
+.ro-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  height: 100%;
+  overflow-y: auto;
+  color: var(--foreground);
+}
+
+/* ---- Header ---- */
+.ro-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.ro-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--foreground);
+}
+
+.ro-subtitle {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* ---- Error banner ---- */
+.ro-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+}
+
+.ro-error-close {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.ro-error-close:hover {
+  opacity: 1;
+}
+
+/* ---- Input panels ---- */
+.ro-input-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .ro-input-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ro-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.ro-panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ---- Tab bar ---- */
+.ro-tab-bar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ro-tab {
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ro-tab:hover {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.ro-tab-active {
+  background: var(--secondary);
+  color: var(--foreground);
+  border-color: var(--ring);
+}
+
+/* ---- Inputs ---- */
+.ro-textarea {
+  width: 100%;
+  min-height: 200px;
+  resize: vertical;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+  line-height: 1.5;
+  transition: border-color 0.2s;
+}
+
+.ro-textarea:focus {
+  outline: none;
+  border-color: var(--ring);
+}
+
+.ro-text-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.875rem;
+  padding: 0.65rem 0.85rem;
+  transition: border-color 0.2s;
+}
+
+.ro-text-input:focus {
+  outline: none;
+  border-color: var(--ring);
+}
+
+.ro-url-input {
+  min-height: unset;
+}
+
+/* ---- File drop area ---- */
+.ro-file-drop-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  padding: 1rem;
+  text-align: center;
+}
+
+.ro-file-drop-area:hover {
+  border-color: var(--ring);
+  background: var(--secondary);
+}
+
+.ro-file-placeholder {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.ro-file-name {
+  color: var(--foreground);
+  font-size: 0.875rem;
+  word-break: break-all;
+}
+
+/* ---- Panel action buttons ---- */
+.ro-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+/* ---- Buttons ---- */
+.ro-btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 7px;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.ro-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ro-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.ro-btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+}
+
+.ro-btn-primary:not(:disabled):hover {
+  opacity: 0.9;
+}
+
+.ro-btn-secondary {
+  background: var(--secondary);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.ro-btn-secondary:not(:disabled):hover {
+  background: var(--accent);
+}
+
+.ro-btn-download {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.ro-btn-download:hover {
+  opacity: 0.9;
+}
+
+/* ---- Section wrapper ---- */
+.ro-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ro-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.ro-section-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ro-chevron {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.ro-resume-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ---- Analysis body ---- */
+.ro-analysis-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ro-analysis-summary {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--foreground);
+  padding: 0.75rem 1rem;
+  background: var(--muted);
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+.ro-analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 700px) {
+  .ro-analysis-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ro-analysis-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ro-analysis-group h4 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.ro-analysis-group-wide {
+  grid-column: 1 / -1;
+}
+
+/* ---- Keyword chips ---- */
+.ro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ro-keyword-chip {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  white-space: nowrap;
+}
+
+.ro-chips-soft .ro-keyword-chip {
+  background: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.ro-chips-culture .ro-keyword-chip {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* ---- Priorities list ---- */
+.ro-priorities-list {
+  padding-left: 1.25rem;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+/* ---- Seniority badge ---- */
+.ro-seniority-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ---- ATS match badge ---- */
+.ro-ats-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* ---- Gaps section ---- */
+.ro-gaps-section {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.ro-gaps-section h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem 0;
+  color: #fcd34d;
+}
+
+.ro-gaps-hint {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.ro-gaps-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+/* ---- Resume preview ---- */
+.ro-resume-preview {
+  padding: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+.ro-resume-preview h1,
+.ro-resume-preview h2,
+.ro-resume-preview h3 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.4rem;
+  color: var(--foreground);
+}
+
+.ro-resume-preview h1 {
+  font-size: 1.4rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.3rem;
+}
+
+.ro-resume-preview h2 {
+  font-size: 1.1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.2rem;
+}
+
+.ro-resume-preview ul,
+.ro-resume-preview ol {
+  padding-left: 1.4rem;
+  margin: 0.4rem 0;
+}
+
+.ro-resume-preview li {
+  margin-bottom: 0.2rem;
+}
+
+.ro-resume-preview strong {
+  color: var(--foreground);
+}
+
+.ro-resume-preview hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
