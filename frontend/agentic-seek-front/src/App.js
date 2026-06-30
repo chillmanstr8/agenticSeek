@@ -4,6 +4,7 @@ import axios from "axios";
 import "./App.css";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { ResizableLayout } from "./components/ResizableLayout";
+import ResumeOptimizer from "./components/ResumeOptimizer";
 import faviconPng from "./logo.png";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -19,6 +20,7 @@ function App() {
   const [isOnline, setIsOnline] = useState(false);
   const [status, setStatus] = useState("Agents ready");
   const [expandedReasoning, setExpandedReasoning] = useState(new Set());
+  const [appView, setAppView] = useState("chat"); // "chat" | "resume"
   const messagesEndRef = useRef(null);
 
   const fetchLatestAnswer = useCallback(async () => {
@@ -222,6 +224,20 @@ function App() {
           </div>
         </div>
         <div className="header-actions">
+          <div className="header-nav">
+            <button
+              className={`nav-tab ${appView === "chat" ? "nav-tab-active" : ""}`}
+              onClick={() => setAppView("chat")}
+            >
+              Chat
+            </button>
+            <button
+              className={`nav-tab ${appView === "resume" ? "nav-tab-active" : ""}`}
+              onClick={() => setAppView("resume")}
+            >
+              Resume Optimizer
+            </button>
+          </div>
           <a
             href="https://github.com/Fosowl/agenticSeek"
             target="_blank"
@@ -240,6 +256,9 @@ function App() {
         </div>
       </header>
       <main className="main">
+        {appView === "resume" ? (
+          <ResumeOptimizer />
+        ) : (
         <ResizableLayout initialLeftWidth={50}>
           <div className="chat-section">
             <h2>Chat Interface</h2>
@@ -409,6 +428,7 @@ function App() {
             </div>
           </div>
         </ResizableLayout>
+        )}
       </main>
     </div>
   );
