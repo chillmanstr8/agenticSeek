@@ -116,7 +116,7 @@ function ResumeOptimizer() {
       setAnalysisExpanded(true);
     } catch (err) {
       setError(
-        err.response?.data?.error || err.response?.data?.analysis_summary || "Failed to analyze job description."
+        err.response?.data?.error || "Failed to analyze job description."
       );
     } finally {
       setIsAnalyzing(false);

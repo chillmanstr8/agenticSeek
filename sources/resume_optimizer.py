@@ -7,10 +7,12 @@ Provides utilities to:
 - Build a tailored resume from a master resume using LLM analysis
 """
 
+import ipaddress
 import json
 import re
-import os
+import socket
 from typing import Optional
+from urllib.parse import urlparse
 
 import requests
 
@@ -30,11 +32,49 @@ _REQUEST_HEADERS = {
 
 _REQUEST_TIMEOUT = 15  # seconds
 
+# HTML tag pattern — length-capped to prevent catastrophic backtracking
+_HTML_TAG_RE = re.compile(r"<[^>]{0,1000}>")
+
+
+def _validate_url(url: str) -> Optional[str]:
+    """
+    Validate that ``url`` is a safe, public HTTP/HTTPS URL.
+
+    Returns an error message string if the URL is invalid or points to a
+    private/reserved network address, or None if the URL is acceptable.
+    """
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return "Malformed URL."
+
+    if parsed.scheme not in ("http", "https"):
+        return "Only http:// and https:// URLs are supported."
+
+    hostname = parsed.hostname
+    if not hostname:
+        return "URL has no hostname."
+
+    # Resolve to IP and check for private/reserved ranges (SSRF prevention)
+    try:
+        ip_str = socket.gethostbyname(hostname)
+        ip = ipaddress.ip_address(ip_str)
+    except (socket.gaierror, ValueError):
+        # Could not resolve — let the downstream request fail naturally
+        return None
+
+    if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+        logger.warning(f"Blocked request to private/reserved address: {ip_str} ({hostname})")
+        return "Requests to private or reserved network addresses are not allowed."
+
+    return None
+
 
 def fetch_job_description(url: str) -> str:
     """
     Fetch and return the plain text of a job description from a URL.
 
+    Validates the URL to prevent SSRF before making the request.
     Falls back gracefully with a descriptive error string if the page cannot
     be retrieved or parsed so that callers can surface the message to the user
     instead of raising an unhandled exception.
@@ -43,22 +83,28 @@ def fetch_job_description(url: str) -> str:
         url: A fully-qualified HTTP/HTTPS URL pointing to a job posting.
 
     Returns:
-        The extracted plain text of the page, or an error message string.
+        The extracted plain text of the page, or an error message string
+        prefixed with "ERROR: ".
     """
+    url_error = _validate_url(url)
+    if url_error:
+        logger.warning(f"URL validation failed for '{url}': {url_error}")
+        return f"ERROR: {url_error}"
+
     try:
         response = requests.get(url, headers=_REQUEST_HEADERS, timeout=_REQUEST_TIMEOUT)
         response.raise_for_status()
     except requests.exceptions.Timeout:
-        msg = f"Request timed out after {_REQUEST_TIMEOUT}s while fetching: {url}"
+        msg = f"Request timed out after {_REQUEST_TIMEOUT}s while fetching the job posting."
         logger.warning(msg)
         return f"ERROR: {msg}"
     except requests.exceptions.HTTPError as exc:
-        msg = f"HTTP {exc.response.status_code} error fetching: {url}"
-        logger.warning(msg)
+        msg = f"HTTP {exc.response.status_code} error while fetching the job posting."
+        logger.warning(f"HTTPError for {url}: {exc}")
         return f"ERROR: {msg}"
     except requests.exceptions.RequestException as exc:
-        msg = f"Failed to fetch URL ({exc}): {url}"
-        logger.warning(msg)
+        msg = "Failed to fetch the job posting URL."
+        logger.warning(f"RequestException for {url}: {exc}")
         return f"ERROR: {msg}"
 
     try:
@@ -70,17 +116,17 @@ def fetch_job_description(url: str) -> str:
         text = soup.get_text(separator="\n")
         # Collapse excessive blank lines
         text = re.sub(r"\n{3,}", "\n\n", text).strip()
-        logger.info(f"Fetched {len(text)} chars from {url}")
+        logger.info(f"Fetched {len(text)} chars from job posting URL")
         return text
     except ImportError:
-        # BeautifulSoup not available — strip HTML tags with a simple regex
+        # BeautifulSoup not available — strip HTML tags with the pre-compiled regex
         logger.warning("beautifulsoup4 not available, falling back to regex HTML stripping")
-        text = re.sub(r"<[^>]+>", " ", response.text)
+        text = _HTML_TAG_RE.sub(" ", response.text)
         text = re.sub(r"\s{2,}", " ", text).strip()
         return text
-    except Exception as exc:  # noqa: BLE001
-        msg = f"Failed to parse page content: {exc}"
-        logger.error(msg)
+    except (AttributeError, TypeError, ValueError) as exc:
+        msg = "Failed to parse the job posting page content."
+        logger.error(f"Parse error for {url}: {exc}")
         return f"ERROR: {msg}"
 
 
@@ -117,9 +163,12 @@ def analyze_job_description(jd_text: str, provider) -> dict:
 
     try:
         raw = provider.respond(history, verbose=False)
+    except (ConnectionError, NotImplementedError, ModuleNotFoundError) as exc:
+        logger.error(f"Provider error during JD analysis: {exc}")
+        return {"error": "The LLM provider failed to respond. Check your provider configuration."}
     except Exception as exc:  # noqa: BLE001
-        logger.error(f"LLM error during JD analysis: {exc}")
-        return {"error": str(exc)}
+        logger.error(f"Unexpected error during JD analysis: {exc}")
+        return {"error": "An unexpected error occurred while analyzing the job description."}
 
     # Strip any accidental markdown fences the model may have added
     cleaned = raw.strip()
@@ -191,13 +240,21 @@ def build_tailored_resume(master_resume: str, analysis: dict, provider) -> dict:
 
     try:
         raw = provider.respond(history, verbose=False)
-    except Exception as exc:  # noqa: BLE001
-        logger.error(f"LLM error during resume building: {exc}")
+    except (ConnectionError, NotImplementedError, ModuleNotFoundError) as exc:
+        logger.error(f"Provider error during resume building: {exc}")
         return {
             "tailored_resume": "",
             "missing_from_master": [],
             "ats_score_estimate": "unknown",
-            "error": str(exc),
+            "error": "The LLM provider failed to respond. Check your provider configuration.",
+        }
+    except Exception as exc:  # noqa: BLE001
+        logger.error(f"Unexpected error during resume building: {exc}")
+        return {
+            "tailored_resume": "",
+            "missing_from_master": [],
+            "ats_score_estimate": "unknown",
+            "error": "An unexpected error occurred while generating the resume.",
         }
 
     # Split the response into the resume body and the metadata sections
@@ -267,7 +324,9 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
         return text
     except ImportError:
         return "ERROR: pypdf is not installed. Install it with: pip install pypdf"
+    except (ValueError, KeyError, AttributeError) as exc:
+        logger.error(f"PDF parsing error: {exc}")
+        return "ERROR: Failed to extract text from the PDF. The file may be corrupted or encrypted."
     except Exception as exc:  # noqa: BLE001
-        msg = f"Failed to extract PDF text: {exc}"
-        logger.error(msg)
-        return f"ERROR: {msg}"
+        logger.error(f"Unexpected PDF extraction error: {exc}")
+        return "ERROR: Failed to extract text from the PDF."
