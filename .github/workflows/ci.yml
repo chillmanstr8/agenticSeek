@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Pre-commit checks
@@ -22,9 +25,13 @@ jobs:
         run: pip install pre-commit
 
       - name: Install TruffleHog
+        env:
+          TRUFFLEHOG_VERSION: "3.96.0"
         run: |
           mkdir -p "$HOME/.local/bin"
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b "$HOME/.local/bin"
+          curl -sSfL "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz" -o /tmp/trufflehog.tar.gz
+          tar -xzf /tmp/trufflehog.tar.gz -C /tmp trufflehog
+          install -m 0755 /tmp/trufflehog "$HOME/.local/bin/trufflehog"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Run pre-commit hooks
