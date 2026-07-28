@@ -1,0 +1,13 @@
+# Minimal dependencies for running CI unit tests.
+# Heavy ML packages (torch, transformers, etc.) are excluded because the tests
+# that require them are skipped in CI (test_memory.py, test_browser_agent_parsing.py,
+# test_chromedriver_update.py).  All other test dependencies are listed here.
+colorama>=0.4.6
+termcolor>=2.4.0
+requests>=2.31.0
+httpx>=0.27
+python-dotenv>=1.0.0
+ollama>=0.4.7
+openai>=1.84.0
+pytest>=8.0.0
+pytest-timeout>=2.3.0

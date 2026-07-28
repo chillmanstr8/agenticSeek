@@ -753,20 +753,23 @@ uv sync
 
 ### Running Tests
 
-Tests live in the `tests/` directory and use Python's built-in `unittest` framework. Run the full suite with:
+Tests live in the `tests/` directory and use Python's `unittest` framework, run via `pytest`. Run the full suite with:
 
 ```sh
 pip install pytest pytest-timeout
 pytest tests/ -v --timeout=30
 ```
 
-To skip tests that require a running browser or external services:
+To skip tests that require a running browser, ChromeDriver, or heavy ML models (torch / transformers):
 
 ```sh
 pytest tests/ -v --timeout=30 \
   --ignore=tests/test_browser_agent_parsing.py \
-  --ignore=tests/test_chromedriver_update.py
+  --ignore=tests/test_chromedriver_update.py \
+  --ignore=tests/test_memory.py
 ```
+
+The CI pipeline uses a lightweight `requirements-ci.txt` to keep install time fast. Tests that need the full ML stack (torch, transformers) are excluded from CI but can still be run locally after `pip install -r requirements.txt`.
 
 ### Pre-commit Hooks
 
