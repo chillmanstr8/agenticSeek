@@ -8,7 +8,7 @@
 
 *A **100% local alternative to Manus AI**, this voice-enabled AI assistant autonomously browses the web, writes code, and plans tasks while keeping all data on your device. Tailored for local reasoning models, it runs entirely on your hardware, ensuring complete privacy and zero cloud dependency.*
 
-[![Visit AgenticSeek](https://img.shields.io/static/v1?label=Website&message=AgenticSeek&color=blue&style=flat-square)](https://fosowl.github.io/agenticSeek.html) ![License](https://img.shields.io/badge/license-GPL--3.0-green) [![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289DA?logo=discord&logoColor=white)](https://discord.gg/8hGDaME3TC) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/fosowl.svg?style=social&label=Update%20%40Fosowl)](https://x.com/Martin993886460) [![GitHub stars](https://img.shields.io/github/stars/Fosowl/agenticSeek?style=social)](https://github.com/Fosowl/agenticSeek/stargazers)
+[![CI](https://github.com/Fosowl/agenticSeek/actions/workflows/ci.yml/badge.svg)](https://github.com/Fosowl/agenticSeek/actions/workflows/ci.yml) [![Visit AgenticSeek](https://img.shields.io/static/v1?label=Website&message=AgenticSeek&color=blue&style=flat-square)](https://fosowl.github.io/agenticSeek.html) ![License](https://img.shields.io/badge/license-GPL--3.0-green) [![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289DA?logo=discord&logoColor=white)](https://discord.gg/8hGDaME3TC) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/fosowl.svg?style=social&label=Update%20%40Fosowl)](https://x.com/Martin993886460) [![GitHub stars](https://img.shields.io/github/stars/Fosowl/agenticSeek?style=social)](https://github.com/Fosowl/agenticSeek/stargazers)
 
 ### Why AgenticSeek ?
 
@@ -731,9 +731,87 @@ The project was created by me, along with two friends who serve as maintainers a
 
 Any AgenticSeek account on X other than my personal account (https://x.com/Martin993886460) is an impersonation.
 
+## Development
+
+This section covers the local development workflow, including running tests, setting up pre-commit hooks, and building Docker images manually.
+
+### Setting Up a Development Environment
+
+```sh
+git clone https://github.com/Fosowl/agenticSeek.git
+cd agenticSeek
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Or using `uv`:
+
+```sh
+uv sync
+```
+
+### Running Tests
+
+Tests live in the `tests/` directory and use Python's `unittest` framework, run via `pytest`. Run the full suite with:
+
+```sh
+pip install pytest pytest-timeout
+pytest tests/ -v --timeout=30
+```
+
+To skip tests that require a running browser, ChromeDriver, or heavy ML models (torch / transformers):
+
+```sh
+pytest tests/ -v --timeout=30 \
+  --ignore=tests/test_browser_agent_parsing.py \
+  --ignore=tests/test_chromedriver_update.py \
+  --ignore=tests/test_memory.py
+```
+
+The CI pipeline uses a lightweight `requirements-ci.txt` to keep install time fast. Tests that need the full ML stack (torch, transformers) are excluded from CI but can still be run locally after `pip install -r requirements.txt`.
+
+### Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com/) with [TruffleHog](https://github.com/trufflesecurity/trufflehog) to prevent secrets from being committed.
+
+```sh
+pip install pre-commit
+pre-commit install        # installs hooks into your local .git
+pre-commit run --all-files  # run manually against all files
+```
+
+Hooks run automatically on `git commit` and `git push`.
+
+### Building Docker Images
+
+Build and start all services locally:
+
+```sh
+docker compose build          # build all service images
+docker compose --profile full up  # start all services
+```
+
+Build only the backend image:
+
+```sh
+docker compose build backend
+```
+
+### CI Pipeline
+
+All pushes and pull requests to `main` trigger the GitHub Actions CI pipeline defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). The pipeline runs:
+
+1. **Pre-commit checks** — secret scanning and code quality hooks
+2. **Unit tests** — lightweight tests that do not require external services
+
+A green badge at the top of this README confirms the current `main` branch is passing.
+
+---
+
 ## Contribute
 
-We’re looking for developers to improve AgenticSeek! Check out open issues or discussion.
+We're looking for developers to improve AgenticSeek! Check out open issues or discussion.
 
 [Contribution guide](./docs/CONTRIBUTING.md)
 
